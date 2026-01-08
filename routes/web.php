@@ -28,6 +28,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Route untuk meja yang sudah terisi
     Volt::route('/pos/checkout/{table}', 'pos.checkout')->name('pos.checkout');
     Volt::route('/pos/report', 'pos.report')->name('pos.report');
+    Volt::route('/pos/stock-monitor', 'pos.stock-monitor')->name('pos.stock-monitor');
 
 });
 

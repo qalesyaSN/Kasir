@@ -65,6 +65,8 @@ class extends Component {
             return;
         }
 
+        
+
         DB::transaction(function() {
             $this->order->update([
                 'discount' => $this->discount_amount,
@@ -74,6 +76,18 @@ class extends Component {
                 'payment_method' => $this->payment_method,
                 'status' => 'paid',
             ]);
+
+            // Tambahkan di dalam fungsi processPayment() sebelum DB::commit
+        foreach ($this->order->order_items as $item) {
+        if ($item->product->track_stock) {
+        $item->product->decrement('stock', $item->qty);
+        
+        // Otomatis ubah status jadi tidak tersedia jika stok 0
+        if ($item->product->stock <= 0) {
+            $item->product->update(['is_available' => false]);
+        }
+        }
+        }
 
             $this->table->update(['status' => 'available']);
         });
