@@ -1,4 +1,5 @@
 <?php
+// ... (Logika PHP tetap sama seperti sebelumnya)
 use Livewire\Volt\Component;
 use App\Models\Table;
 use App\Models\Order;
@@ -16,7 +17,6 @@ class extends Component {
     public $split_pay_amount = 0;
     public $payment_method = 'cash';
     
-    // Fitur Diskon
     public $discount_input = ''; 
     public $discount_type = 'fixed'; 
 
@@ -27,8 +27,6 @@ class extends Component {
                             ->with('order_items.product')
                             ->first();
     }
-
-    // --- LOGIKA PERHITUNGAN (COMPUTED) ---
 
     public function getDiscountAmountProperty() {
         $input = (float)($this->discount_input ?: 0);
@@ -52,8 +50,6 @@ class extends Component {
     public function getAvailableTablesProperty() {
         return Table::where('status', 'available')->orderBy('number', 'asc')->get();
     }
-
-    // --- AKSI USER ---
 
     public function setPayAmount($amount) {
         if ($amount === 'pas') {
@@ -164,16 +160,13 @@ class extends Component {
 
     private function recalculateOriginalOrder() {
         $newSubtotal = $this->order->order_items->sum(fn($item) => $item->price * $item->qty);
-        
         if ($newSubtotal <= 0) {
             $this->order->update(['status' => 'paid']);
             $this->table->update(['status' => 'available']);
             return;
         }
-
         $newService = $newSubtotal * 0.05;
         $newTax = ($newSubtotal + $newService) * 0.10;
-        
         $this->order->update([
             'subtotal' => $newSubtotal,
             'service_charge' => $newService,
@@ -183,17 +176,17 @@ class extends Component {
     }
 }; ?>
 
-<div class="min-h-screen bg-gray-50 pb-20">
+<div class="min-h-screen bg-gray-50 dark:bg-gray-950 pb-20 transition-colors duration-500">
     <div class="max-w-6xl mx-auto p-4 md:p-6">
         
         <!-- HEADER -->
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
             <div>
-                <h1 class="text-3xl font-black text-gray-800 tracking-tighter uppercase">Checkout</h1>
-                <p class="text-sm text-gray-500 font-medium">Meja {{ $table->number }} • {{ $order->order_number ?? '-' }}</p>
+                <h1 class="text-3xl font-black text-gray-800 dark:text-gray-100 tracking-tighter uppercase">Checkout</h1>
+                <p class="text-sm text-gray-500 dark:text-gray-400 font-medium italic">Meja {{ $table->number }} • {{ $order->order_number ?? '-' }}</p>
             </div>
-            <a href="{{ route('pos.index') }}" class="px-5 py-2 bg-white border border-gray-200 text-gray-400 rounded-xl font-bold hover:bg-gray-50 transition text-sm">
-                KEMBALI KE MEJA
+            <a href="{{ route('pos.index') }}" class="px-5 py-2 bg-white dark:bg-gray-900 border border-gray-200 dark:border-gray-800 text-gray-400 dark:text-gray-500 rounded-xl font-bold hover:bg-gray-50 dark:hover:bg-gray-800 transition text-sm">
+                KEMBALI KE DASHBOARD
             </a>
         </div>
 
@@ -201,46 +194,49 @@ class extends Component {
             
             <!-- KOLOM KIRI: RINCIAN TAGIHAN & SPLIT -->
             <div class="lg:col-span-7 space-y-6">
-                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 overflow-hidden">
-                    <div class="p-6 border-b border-gray-50 flex justify-between items-center">
-                        <h3 class="font-black text-gray-700 uppercase tracking-widest text-xs">Daftar Pesanan</h3>
-                        <span class="text-[10px] bg-rose-50 text-rose-500 px-3 py-1 rounded-lg font-black italic">Bisa Split Bill</span>
+                <!-- Tabel Pesanan (Modern & Clean) -->
+                <div class="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 overflow-hidden">
+                    <div class="p-6 border-b border-gray-50 dark:border-gray-800 flex justify-between items-center">
+                        <h3 class="font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest text-xs">Rincian Nota</h3>
+                        <div class="flex items-center gap-2">
+                             <span class="text-[9px] bg-rose-50 dark:bg-rose-900/20 text-rose-500 px-2 py-1 rounded-lg font-black uppercase">Mode Split Aktif</span>
+                        </div>
                     </div>
                     
                     <div class="overflow-x-auto">
                         <table class="w-full text-left">
-                            <thead class="bg-gray-50/50">
-                                <tr class="text-[10px] uppercase text-gray-400 font-bold tracking-widest">
+                            <thead class="bg-gray-50/50 dark:bg-gray-800/30">
+                                <tr class="text-[10px] uppercase text-gray-400 dark:text-gray-500 font-bold tracking-widest">
                                     <th class="px-6 py-4">Pilih</th>
                                     <th class="px-6 py-4">Menu</th>
                                     <th class="px-6 py-4 text-center">Qty</th>
                                     <th class="px-6 py-4 text-right">Subtotal</th>
-                                    <th class="px-6 py-4 text-center">Split</th>
+                                    <th class="px-6 py-4 text-center">Qty Bayar</th>
                                 </tr>
                             </thead>
-                            <tbody class="divide-y divide-gray-50">
+                            <tbody class="divide-y divide-gray-50 dark:divide-gray-800">
                                 @if($order)
                                     @foreach($order->order_items as $item)
-                                        <tr class="hover:bg-gray-50/80 transition group">
+                                        <tr class="hover:bg-gray-50/80 dark:hover:bg-gray-800/50 transition">
                                             <td class="px-6 py-4">
                                                 <input type="checkbox" wire:model.live="selectedItems" value="{{ $item->id }}" 
-                                                       class="w-5 h-5 rounded-lg border-gray-300 text-emerald-600 focus:ring-emerald-500">
+                                                       class="w-5 h-5 rounded-lg border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 text-emerald-600 focus:ring-emerald-500">
                                             </td>
                                             <td class="px-6 py-4">
-                                                <p class="font-bold text-gray-800 text-sm leading-tight">{{ $item->product->name }}</p>
-                                                <p class="text-[10px] text-gray-400">@ Rp {{ number_format($item->price) }}</p>
+                                                <p class="font-bold text-gray-800 dark:text-gray-100 text-sm leading-tight">{{ $item->product->name }}</p>
+                                                <p class="text-[10px] text-gray-400 dark:text-gray-500 font-medium italic">@ Rp {{ number_format($item->price) }}</p>
                                             </td>
-                                            <td class="px-6 py-4 text-center font-bold text-gray-600">{{ $item->qty }}</td>
-                                            <td class="px-6 py-4 text-right font-black text-gray-800 text-sm">
-                                                {{ number_format($item->price * $item->qty) }}
+                                            <td class="px-6 py-4 text-center font-black text-gray-600 dark:text-gray-400">{{ $item->qty }}</td>
+                                            <td class="px-6 py-4 text-right font-black text-gray-800 dark:text-gray-100 text-sm">
+                                                Rp {{ number_format($item->price * $item->qty) }}
                                             </td>
                                             <td class="px-6 py-4">
                                                 @if(in_array($item->id, $selectedItems))
                                                     <input type="number" wire:model.live.number="splitQuantities.{{ $item->id }}" 
                                                            min="1" max="{{ $item->qty }}" 
-                                                           class="w-14 mx-auto block p-1 text-xs text-center border-emerald-200 rounded-lg bg-emerald-50 font-black text-emerald-700">
+                                                           class="w-14 mx-auto block p-1.5 text-xs text-center border-emerald-200 dark:border-emerald-900 rounded-lg bg-emerald-50 dark:bg-emerald-900/30 font-black text-emerald-700 dark:text-emerald-400">
                                                 @else
-                                                    <div class="w-14 h-8 mx-auto flex items-center justify-center text-gray-200 italic">-</div>
+                                                    <div class="w-14 h-8 mx-auto flex items-center justify-center text-gray-200 dark:text-gray-800 italic">-</div>
                                                 @endif
                                             </td>
                                         </tr>
@@ -251,17 +247,20 @@ class extends Component {
                     </div>
                 </div>
 
-                <!-- PINDAH MEJA -->
-                <div class="bg-amber-50 rounded-2xl p-6 border border-amber-100">
-                    <h4 class="text-amber-800 font-black text-[10px] uppercase tracking-widest mb-4">Aksi: Pindahkan Meja</h4>
+                <!-- PINDAH MEJA (Dibuat Lebih Kalem & Senada Meja) -->
+                <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 border-l-4 border-amber-500 shadow-sm border border-gray-100 dark:border-gray-800">
+                    <h4 class="text-amber-600 dark:text-amber-500 font-black text-[10px] uppercase tracking-widest mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" /></svg>
+                        Pindahkan Pesanan ke Meja Lain
+                    </h4>
                     <div class="flex flex-wrap gap-2">
                         @forelse($this->availableTables as $at)
-                            <button wire:click="moveTable({{ $at->id }})" wire:confirm="Yakin pindah ke Meja {{ $at->number }}?"
-                                    class="px-4 py-2 bg-white border border-amber-200 text-amber-700 rounded-xl text-xs font-bold hover:bg-amber-500 hover:text-white transition shadow-sm">
-                                Meja {{ $at->number }}
+                            <button wire:click="moveTable({{ $at->id }})" wire:confirm="Pindah ke Meja {{ $at->number }}?"
+                                    class="px-4 py-2 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-gray-600 dark:text-gray-300 rounded-xl text-xs font-black hover:bg-amber-500 hover:text-white dark:hover:bg-amber-600 transition shadow-sm">
+                                MEJA {{ $at->number }}
                             </button>
                         @empty
-                            <p class="text-[10px] text-amber-600 font-bold italic">Meja penuh.</p>
+                            <p class="text-[10px] text-gray-400 dark:text-gray-600 font-bold italic italic">Tidak ada meja kosong tersedia.</p>
                         @endforelse
                     </div>
                 </div>
@@ -270,7 +269,7 @@ class extends Component {
             <!-- KOLOM KANAN: RINGKASAN & BAYAR -->
             <div class="lg:col-span-5 space-y-6">
                 
-                <!-- PANEL SPLIT BILL (Hanya muncul jika ada item dipilih) -->
+                <!-- PANEL SPLIT BILL (Lebih Elegan) -->
                 @if(!empty($selectedItems))
                     @php
                         $sSub = 0;
@@ -281,105 +280,110 @@ class extends Component {
                                 $sSub += ($it->price * min($qS, $it->qty));
                             }
                         }
-                        $sServ = $sSub * 0.05;
-                        $sTax = ($sSub + $sServ) * 0.10;
-                        $sTotal = $sSub + $sServ + $sTax;
+                        $sServ = $sSub * 0.05; $sTax = ($sSub + $sServ) * 0.10; $sTotal = $sSub + $sServ + $sTax;
                         $sChange = max(0, (int)$split_pay_amount - $sTotal);
                     @endphp
-                    <div class="bg-blue-600 rounded-3xl p-6 text-white shadow-xl shadow-blue-100">
-                        <h3 class="font-black uppercase tracking-tighter text-xs mb-4">Pembayaran Split</h3>
-                        <div class="flex justify-between items-end mb-6">
-                            <p class="text-[10px] opacity-80 uppercase font-bold">Total Parsial</p>
-                            <h2 class="text-3xl font-black">Rp {{ number_format($sTotal) }}</h2>
+                    <div class="bg-white dark:bg-gray-900 rounded-3xl p-6 border-l-4 border-blue-500 shadow-xl border border-gray-100 dark:border-gray-800">
+                        <div class="flex justify-between items-start mb-6">
+                            <div>
+                                <h3 class="font-black uppercase tracking-tighter text-[10px] text-blue-600 dark:text-blue-400 mb-1">Nota Split Aktif</h3>
+                                <p class="text-2xl font-black text-gray-800 dark:text-gray-100 tracking-tighter">Rp {{ number_format($sTotal) }}</p>
+                            </div>
+                            <svg class="w-8 h-8 text-blue-100 dark:text-blue-900/30" fill="currentColor" viewBox="0 0 24 24"><path d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                         </div>
                         
                         <div class="space-y-4">
                             <div>
-                                <label class="text-[10px] font-bold opacity-60 uppercase mb-1 block">Uang Tunai</label>
+                                <label class="text-[9px] font-black text-gray-400 uppercase mb-2 block tracking-widest">Uang Diterima</label>
                                 <input type="number" wire:model.live.number="split_pay_amount" placeholder="0"
-                                       class="w-full p-4 bg-white/10 border border-white/20 rounded-2xl text-xl font-black placeholder:text-white/30 focus:ring-0">
+                                       class="w-full p-4 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-2xl text-xl font-black text-gray-800 dark:text-white focus:ring-2 focus:ring-blue-500">
                             </div>
                             
-                            <div class="flex justify-between items-center">
-                                <span class="text-xs font-bold opacity-80">KEMBALIAN</span>
-                                <span class="font-black text-xl">Rp {{ number_format($sChange) }}</span>
+                            <div class="flex justify-between items-center py-2">
+                                <span class="text-xs font-bold text-gray-400 uppercase tracking-widest">Kembalian</span>
+                                <span class="font-black text-xl text-emerald-500 dark:text-emerald-400">Rp {{ number_format($sChange) }}</span>
                             </div>
 
                             <button wire:click="splitBill" @if($split_pay_amount < $sTotal) disabled @endif
-                                    class="w-full py-4 bg-white text-blue-700 rounded-2xl font-black shadow-lg hover:bg-blue-50 transition disabled:opacity-30">
-                                BAYAR SPLIT
+                                    class="w-full py-4 bg-blue-600 dark:bg-blue-700 text-white rounded-2xl font-black shadow-lg hover:bg-blue-700 transition disabled:opacity-30 disabled:grayscale">
+                                BAYAR PARSIAL SEKARANG
                             </button>
                         </div>
                     </div>
                 @endif
 
-                <!-- PANEL PROMO & DISKON -->
-                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6">
-                    <h3 class="font-black text-gray-700 uppercase tracking-widest text-xs mb-4">Promo & Diskon</h3>
+                <!-- PANEL PROMO & DISKON (Warna Senada Dashboard) -->
+                <div class="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6">
+                    <h3 class="font-black text-gray-700 dark:text-gray-300 uppercase tracking-widest text-[10px] mb-4 flex items-center gap-2">
+                        <svg class="w-4 h-4 text-emerald-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v13m0-13V6a2 2 0 112 2h-2zm0 0V5.5A2.5 2.5 0 109.5 8H12z" /></svg>
+                        Potongan Harga & Promo
+                    </h3>
                     <div class="flex gap-2 mb-4">
                         <button wire:click="$set('discount_type', 'fixed')" 
-                                @class(['flex-1 py-2 rounded-xl font-bold text-[10px] border transition', $discount_type === 'fixed' ? 'bg-gray-800 border-gray-800 text-white' : 'bg-gray-50 border-gray-200 text-gray-400'])>
-                            RP (NOMINAL)
+                                @class(['flex-1 py-2 rounded-xl font-black text-[10px] border transition', $discount_type === 'fixed' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'])>
+                            RUPIAH (RP)
                         </button>
                         <button wire:click="$set('discount_type', 'percent')" 
-                                @class(['flex-1 py-2 rounded-xl font-bold text-[10px] border transition', $discount_type === 'percent' ? 'bg-gray-800 border-gray-800 text-white' : 'bg-gray-50 border-gray-200 text-gray-400'])>
-                            % (PERSEN)
+                                @class(['flex-1 py-2 rounded-xl font-black text-[10px] border transition', $discount_type === 'percent' ? 'bg-emerald-600 border-emerald-600 text-white' : 'bg-gray-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-gray-400'])>
+                            PERSEN (%)
                         </button>
                     </div>
                     <div class="relative">
-                        <span class="absolute left-4 top-3.5 font-black text-gray-400 text-sm">
+                        <span class="absolute left-4 top-3.5 font-black text-gray-400 dark:text-gray-500 text-sm">
                             {{ $discount_type === 'fixed' ? 'Rp' : '%' }}
                         </span>
                         <input type="number" wire:model.live="discount_input" 
-                               class="w-full pl-12 pr-4 py-3 bg-gray-50 border-none rounded-2xl font-black text-gray-800 focus:ring-2 focus:ring-emerald-500">
+                               class="w-full pl-12 pr-4 py-3 bg-gray-50 dark:bg-gray-800 border border-gray-100 dark:border-gray-700 rounded-2xl font-black text-gray-800 dark:text-gray-100 focus:ring-2 focus:ring-emerald-500 transition-colors">
                     </div>
                 </div>
 
-                <!-- RINGKASAN FINAL -->
-                <div class="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 space-y-3">
-                    <div class="flex justify-between text-xs">
-                        <span class="text-gray-400 font-bold uppercase tracking-widest">Subtotal</span>
-                        <span class="font-bold text-gray-700">Rp {{ number_format($order->subtotal ?? 0) }}</span>
+                <!-- RINGKASAN TAGIHAN FINAL -->
+                <div class="bg-white dark:bg-gray-900 rounded-3xl shadow-sm border border-gray-100 dark:border-gray-800 p-6 space-y-4">
+                    <div class="space-y-2">
+                        <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            <span>Subtotal Menu</span>
+                            <span class="text-gray-700 dark:text-gray-300 font-black">Rp {{ number_format($order->subtotal ?? 0) }}</span>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-bold text-rose-500 dark:text-rose-400 uppercase tracking-widest">
+                            <span>Diskon Promo</span>
+                            <span class="font-black">- Rp {{ number_format($this->discount_amount) }}</span>
+                        </div>
+                        <div class="flex justify-between text-[10px] font-bold text-gray-400 uppercase tracking-widest">
+                            <span>Biaya Tambahan (Tax/Svc)</span>
+                            <span class="text-gray-700 dark:text-gray-300 font-black">Rp {{ number_format(($order->tax ?? 0) + ($order->service_charge ?? 0)) }}</span>
+                        </div>
                     </div>
-                    <div class="flex justify-between text-xs text-rose-500 font-bold uppercase tracking-widest">
-                        <span>Diskon</span>
-                        <span>- Rp {{ number_format($this->discount_amount) }}</span>
-                    </div>
-                    <div class="flex justify-between text-xs">
-                        <span class="text-gray-400 font-bold uppercase tracking-widest">Pajak & Service</span>
-                        <span class="font-bold text-gray-700">Rp {{ number_format(($order->tax ?? 0) + ($order->service_charge ?? 0)) }}</span>
-                    </div>
-                    <div class="pt-4 border-t flex justify-between items-center">
-                        <span class="font-black text-gray-800 uppercase tracking-tighter">Total Akhir</span>
-                        <span class="text-3xl font-black text-emerald-600">Rp {{ number_format($this->total_with_discount) }}</span>
+                    <div class="pt-4 border-t dark:border-gray-800 flex justify-between items-center">
+                        <span class="font-black text-gray-800 dark:text-gray-200 uppercase tracking-tighter text-sm">Total Tagihan Akhir</span>
+                        <span class="text-3xl font-black text-emerald-600 dark:text-emerald-400 tracking-tighter shadow-emerald-500/10">Rp {{ number_format($this->total_with_discount) }}</span>
                     </div>
                 </div>
 
-                <!-- PANEL BAYAR TUNAI -->
-                <div class="bg-gray-900 rounded-3xl p-6 text-white shadow-2xl">
+                <!-- PANEL PEMBAYARAN TUNAI (Dark UI Tetap Konsisten) -->
+                <div class="bg-gray-900 dark:bg-black rounded-3xl p-6 text-white shadow-2xl transition-all border border-transparent dark:border-gray-800">
                     @if (session()->has('error'))
                         <div class="mb-4 bg-rose-500/20 text-rose-300 p-3 rounded-xl text-[10px] font-bold border border-rose-500/30">
                             {{ session('error') }}
                         </div>
                     @endif
 
-                    <div class="space-y-4">
+                    <div class="space-y-5">
                         <div class="flex justify-between items-center">
-                            <label class="text-[10px] font-bold text-gray-500 uppercase tracking-widest">Uang Tunai</label>
-                            <button wire:click="setPayAmount('pas')" class="px-3 py-1 bg-gray-800 border border-gray-700 rounded-lg text-[9px] font-black hover:bg-emerald-500 transition uppercase">Uang Pas</button>
+                            <label class="text-[10px] font-bold text-gray-500 dark:text-gray-500 uppercase tracking-widest">Tunai Diterima</label>
+                            <button wire:click="setPayAmount('pas')" class="px-4 py-1.5 bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-800 rounded-xl text-[10px] font-black hover:bg-emerald-500 hover:border-emerald-500 transition-all uppercase tracking-tighter">UANG PAS</button>
                         </div>
                         <input type="number" wire:model.live.number="pay_amount" 
-                               class="w-full bg-gray-800 border-none rounded-2xl p-4 text-3xl font-black text-white focus:ring-2 focus:ring-emerald-500">
+                               class="w-full bg-gray-800 dark:bg-gray-900 border border-gray-700 dark:border-gray-800 rounded-2xl p-5 text-4xl font-black text-white focus:ring-2 focus:ring-emerald-500 transition-all placeholder:text-gray-700">
                         
-                        <div class="flex justify-between items-center pt-4 border-t border-gray-800">
-                            <span class="text-xs font-bold text-gray-500 uppercase">Kembalian</span>
-                            <span class="text-2xl font-black text-emerald-400">Rp {{ number_format($this->change) }}</span>
+                        <div class="flex justify-between items-center pt-5 border-t border-gray-800 dark:border-gray-800 font-black">
+                            <span class="text-xs text-gray-500 uppercase tracking-widest">Kembalian Kasir</span>
+                            <span class="text-2xl text-emerald-400 italic">Rp {{ number_format($this->change) }}</span>
                         </div>
 
                         <button wire:click="processPayment" 
                                 @if($pay_amount < $this->total_with_discount) disabled @endif
-                                class="w-full py-5 bg-emerald-500 text-white rounded-2xl font-black text-lg shadow-xl shadow-emerald-900/20 hover:bg-emerald-400 transition disabled:opacity-20 disabled:grayscale">
-                            SELESAIKAN PEMBAYARAN
+                                class="w-full py-5 bg-emerald-500 dark:bg-emerald-600 text-white rounded-2xl font-black text-xl shadow-xl shadow-emerald-900/20 hover:bg-emerald-400 dark:hover:bg-emerald-500 transition-all disabled:opacity-20 disabled:grayscale active:scale-95 border-b-4 border-emerald-800">
+                            CETAK STRUK & SELESAI
                         </button>
                     </div>
                 </div>
@@ -392,8 +396,6 @@ class extends Component {
 <script>
     window.addEventListener('open-print', event => {
         window.open(event.detail.url, '_blank');
-        setTimeout(() => {
-            window.location.href = "{{ route('pos.index') }}";
-        }, 1000);
+        setTimeout(() => { window.location.href = "{{ route('pos.index') }}"; }, 1000);
     });
 </script>
